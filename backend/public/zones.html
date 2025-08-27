@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Assign Zone to Team</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 30px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      background: #f9f9f9;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+      margin-top: 15px;
+    }
+    select, button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    ul {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      margin-top: 5px;
+      list-style-type: disc;
+    }
+    li { margin: 3px 0; }
+    button {
+      background: #28a745;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover { background: #218838; }
+    #message { margin-top: 12px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h2>Assign Zone to Team</h2>
+
+  <form id="zoneForm">
+    <!-- Zone selection -->
+    <label for="zoneSelect">Zone:</label>
+    <select id="zoneSelect" required>
+      <option value="">Loading zones...</option>
+    </select>
+
+    <!-- Team selection -->
+    <label for="teamSelect">Team:</label>
+    <select id="teamSelect" required>
+      <option value="">Loading teams...</option>
+    </select>
+
+    <!-- Tasks from team's department (read-only info) -->
+    <label>Department Tasks:</label>
+    <ul id="taskList">
+      <li style="color: gray;">Select a team to view tasks...</li>
+    </ul>
+
+    <button type="submit">Assign Zone</button>
+    <div id="message"></div>
+  </form>
+
+  <script>
+    const API_BASE = "http://localhost:5000/api"; // your backend
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx0XhDJLbzrTNJyUZGkPnqEbjO2v9ZVohdFhqI_JwIY9pukCJ0NswTAGmnFhHKB_MW-/exec";
+
+    let teamsCache = [];
+
+    // Load zones from Google Sheets (STRICT: use data.offices[*].officeName)
+    async function loadZones() {
+      try {
+        const res = await fetch(APPS_SCRIPT_URL);
+        if (!res.ok) throw new Error("Failed to load zones");
+        const data = await res.json();
+
+        const zones = Array.isArray(data?.offices) ? data.offices : [];
+        const zoneSelect = document.getElementById("zoneSelect");
+
+        if (!zones.length) {
+          zoneSelect.innerHTML = '<option value="">No zones available</option>';
+          return;
+        }
+
+        zoneSelect.innerHTML = '<option value="">-- Select a Zone --</option>';
+        zones.forEach(z => {
+          if (z && z.officeName) {
+            const name = String(z.officeName).trim();
+            const opt = document.createElement("option");
+            opt.value = name;           // ✅ send zone name EXACTLY as in Sheets
+            opt.textContent = name;     // ✅ show same name
+            zoneSelect.appendChild(opt);
+          }
+        });
+      } catch (err) {
+        console.error("Error loading zones:", err);
+        document.getElementById("zoneSelect").innerHTML = '<option value="">Failed to load zones</option>';
+      }
+    }
+
+    // Load teams (each has department{name, tasks} populated)
+    async function loadTeams() {
+      try {
+        const res = await fetch(`${API_BASE}/teams`);
+        if (!res.ok) throw new Error("Failed to load teams");
+        const teams = await res.json();
+        teamsCache = teams;
+
+        const teamSelect = document.getElementById("teamSelect");
+        if (!teams.length) {
+          teamSelect.innerHTML = '<option value="">No teams available</option>';
+          return;
+        }
+
+        teamSelect.innerHTML = '<option value="">-- Select a Team --</option>';
+        teams.forEach(team => {
+          const opt = document.createElement("option");
+          opt.value = String(team._id).trim();
+          opt.textContent = team.name;
+          teamSelect.appendChild(opt);
+        });
+
+        // Show department tasks when a team is picked
+        teamSelect.addEventListener("change", () => {
+          const selectedId = teamSelect.value;
+          const taskList = document.getElementById("taskList");
+          taskList.innerHTML = "";
+
+          const team = teamsCache.find(t => t._id === selectedId);
+          const tasks = team?.department?.tasks;
+
+          if (Array.isArray(tasks) && tasks.length) {
+            tasks.forEach(task => {
+              const li = document.createElement("li");
+              li.textContent = task;
+              taskList.appendChild(li);
+            });
+          } else {
+            taskList.innerHTML = '<li style="color: gray;">No tasks found for this team.</li>';
+          }
+        });
+      } catch (err) {
+        console.error("Error loading teams:", err);
+        document.getElementById("teamSelect").innerHTML = '<option value="">Failed to load teams</option>';
+      }
+    }
+
+    // Submit assignment (POST /api/zones with { name: zoneName, team: teamId })
+    document.getElementById("zoneForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const message = document.getElementById("message");
+      message.textContent = "";
+      message.style.color = "";
+
+      const zoneName = document.getElementById("zoneSelect").value.trim(); // ✅ zone NAME from Sheets
+      const teamId = document.getElementById("teamSelect").value.trim();
+
+      if (!zoneName || !teamId) {
+        message.textContent = "Please select both zone and team.";
+        message.style.color = "red";
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE}/zones`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: zoneName, team: teamId })
+        });
+
+        const raw = await res.text();
+        let payload = {};
+        try { payload = raw ? JSON.parse(raw) : {}; } catch { /* keep text fallback */ }
+
+        if (!res.ok) {
+          const errMsg = payload.error || payload.message || raw || "Failed to assign zone";
+          throw new Error(errMsg);
+        }
+
+        message.textContent = payload.message || "Zone successfully assigned!";
+        message.style.color = "green";
+        e.target.reset();
+        document.getElementById("taskList").innerHTML = '<li style="color: gray;">Select a team to view tasks...</li>';
+      } catch (err) {
+        console.error("Error assigning zone:", err);
+        message.textContent = `Error: ${err.message}`;
+        message.style.color = "red";
+      }
+    });
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      loadZones();
+      loadTeams();
+    });
+  </script>
+</body>
+</html>

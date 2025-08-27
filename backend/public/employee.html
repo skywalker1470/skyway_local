@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Employee Check-in</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; margin: 40px; }
+    video, canvas { max-width: 300px; margin: 5px; border-radius: 8px; }
+    #status { margin-top: 10px; font-weight: bold; }
+    button { padding: 10px 22px; font-size: 16px; border-radius: 5px; cursor: pointer; }
+    .success { color: green; }
+    .error { color: red; }
+  </style>
+</head>
+<body>
+  <h2>📸 Employee Check-in</h2>
+  <p>This application will access your camera and location for attendance purposes only.</p>
+
+  <video id="video" autoplay aria-label="Webcam Stream"></video><br>
+  <button id="capture" aria-label="Capture and Submit Photo">Capture & Submit</button>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+  <p id="status"></p>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const captureBtn = document.getElementById('capture');
+    const statusP = document.getElementById('status');
+
+    // Replace with your real employee token, e.g., window.token injected by backend
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4YTM1ZGM3NmQyZjA2M2ZlYzVjNjQ0ZSIsInJvbGUiOiJlbXBsb3llZSIsImlhdCI6MTc1NTUzNzQyMiwiZXhwIjoxNzU1NTQxMDIyfQ.VjgVxgCpgGPa6Fb_R3btHvfI1vkDT9DhZfMhP46Jv2k';
+
+    // Request camera
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+          video.srcObject = stream;
+      })
+      .catch(err => {
+          console.error(err);
+          statusP.textContent = '❌ Cannot access camera: ' + err.message;
+          statusP.className = "error";
+      });
+    } else {
+      statusP.textContent = "❌ Sorry, your browser doesn't support camera access.";
+      statusP.className = "error";
+    }
+
+    captureBtn.addEventListener('click', async () => {
+      captureBtn.disabled = true;
+      statusP.textContent = '⏳ Capturing…';
+      statusP.className = "";
+
+      // Take photo
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      canvas.toBlob(async blob => {
+          if (!blob) {
+              statusP.textContent = '❌ Failed to capture image.';
+              statusP.className = "error";
+              captureBtn.disabled = false;
+              return;
+          }
+
+          // Get location
+          if (!navigator.geolocation) {
+              statusP.textContent = "❌ Geolocation not supported by your browser.";
+              statusP.className = "error";
+              captureBtn.disabled = false;
+              return;
+          }
+
+          navigator.geolocation.getCurrentPosition(async pos => {
+              const lat = pos.coords.latitude;
+              const lng = pos.coords.longitude;
+
+              const formData = new FormData();
+              formData.append('photo', blob, 'checkin.jpg');
+              formData.append('lat', lat);
+              formData.append('lng', lng);
+
+              statusP.textContent = '📤 Uploading…';
+
+              try {
+                  const res = await fetch('/api/photos/checkin', {
+                      method: 'POST',
+                      headers: {
+                          Authorization: 'Bearer ' + token
+                      },
+                      body: formData
+                  });
+
+                  const text = await res.text();
+                  let data;
+                  try {
+                      data = JSON.parse(text);
+                  } catch (e) {
+                      data = { error: 'Invalid JSON from server', raw: text };
+                  }
+
+                  if (res.ok) {
+                      statusP.textContent = '✅ Success: ' + JSON.stringify(data);
+                      statusP.className = "success";
+                  } else {
+                      statusP.textContent = '❌ Error: ' + (data.error || res.statusText);
+                      statusP.className = "error";
+                  }
+
+              } catch (err) {
+                  console.error(err);
+                  statusP.textContent = '❌ Network error: ' + err.message;
+                  statusP.className = "error";
+              }
+              captureBtn.disabled = false;
+
+          }, err => {
+              console.error(err);
+              statusP.textContent = '❌ Could not get location: ' + err.message;
+              statusP.className = "error";
+              captureBtn.disabled = false;
+          });
+      }, 'image/jpeg');
+    });
+  </script>
+</body>
+</html>

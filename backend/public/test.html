@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Employee Management System</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+    .section { margin-bottom: 30px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+    input, select, button { margin: 5px; padding: 8px; }
+    button { cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #45a049; }
+    .error { color: red; margin: 5px 0; }
+    .success { color: green; margin: 5px 0; }
+    .tasks-list { margin-top: 10px; padding-left: 20px; }
+    
+    /* Employee selector styles */
+    .employee-selector {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 10px;
+      background: #f9f9f9;
+    }
+    .selector-header {
+      margin-bottom: 10px;
+    }
+    .selector-actions {
+      display: flex;
+      gap: 5px;
+      margin: 5px 0;
+    }
+    .employee-item {
+      padding: 5px 0;
+      margin: 2px 0;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+    .employee-item:hover {
+      background-color: #f0f0f0;
+    }
+    .employee-item label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      padding: 3px 5px;
+    }
+    .employee-item input[type="checkbox"] {
+      margin-right: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Employee Management System</h1>
+
+  <div class="section">
+    <h2>Departments</h2>
+    <div>
+      <input id="deptName" placeholder="Department name" />
+      <input id="deptTasks" placeholder="Tasks (comma separated)" />
+      <button onclick="addDepartment()">Add Department</button>
+    </div>
+    <div id="deptList" class="tasks-list"></div>
+  </div>
+
+  <div class="section">
+    <h2>Teams</h2>
+    <div>
+      <input id="teamName" placeholder="Team name" />
+      <select id="teamDept" onchange="loadDepartmentTasks()">
+        <option value="">Select Department</option>
+      </select>
+      <div id="departmentTasks" class="tasks-list"></div>
+      <div class="employee-selector" style="display: inline-block; vertical-align: top; margin: 5px; width: 250px;">
+        <div class="selector-header">
+          <h4>Select Employees</h4>
+          <input type="text" id="employeeSearch" placeholder="Search employees..." style="width: 100%; padding: 5px; margin-bottom: 5px;">
+          <div class="selector-actions">
+            <button onclick="selectAllEmployees()" style="font-size: 12px; padding: 2px 5px;">Select All</button>
+            <button onclick="deselectAllEmployees()" style="font-size: 12px; padding: 2px 5px;">Deselect All</button>
+          </div>
+        </div>
+        <div id="employeeCheckboxContainer" style="max-height: 200px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; border-radius: 4px;">
+          <div class="employee-loading">Loading employees...</div>
+        </div>
+        <div id="selectedCount" style="font-size: 12px; margin-top: 5px; color: #666;">0 employees selected</div>
+      </div>
+      <select id="teamSup">
+        <option disabled>Loading supervisors...</option>
+      </select>
+      <button onclick="addTeam()">Create Team</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>All Teams</h2>
+    <div id="teamsList"></div>
+  </div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    let allEmployees = [];
+    let allSupervisors = [];
+    let allDepartments = [];
+
+    // Employee selection functions
+    function updateSelectedCount() {
+      const selected = document.querySelectorAll('#employeeCheckboxContainer input[type="checkbox"]:checked').length;
+      document.getElementById('selectedCount').textContent = `${selected} employee${selected !== 1 ? 's' : ''} selected`;
+    }
+
+    function selectAllEmployees() {
+      document.querySelectorAll('#employeeCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = true;
+      });
+      updateSelectedCount();
+    }
+
+    function deselectAllEmployees() {
+      document.querySelectorAll('#employeeCheckboxContainer input[type="checkbox"]').forEach(checkbox => {
+        checkbox.checked = false;
+      });
+      updateSelectedCount();
+    }
+
+    function filterEmployees() {
+      const searchTerm = document.getElementById('employeeSearch').value.toLowerCase();
+      const checkboxes = document.querySelectorAll('#employeeCheckboxContainer .employee-item');
+
+      checkboxes.forEach(item => {
+        const name = item.textContent.toLowerCase();
+        item.style.display = name.includes(searchTerm) ? 'block' : 'none';
+      });
+    }
+
+    // Load initial data
+    document.addEventListener('DOMContentLoaded', async () => {
+      await Promise.all([
+        loadMeta(),
+        loadDepartments(),
+        loadTeams()
+      ]);
+    });
+
+    async function loadMeta() {
+      try {
+        // Fetch real employees from API
+        const empRes = await fetch(`${API}/employees`);
+        if (!empRes.ok) {
+          throw new Error('Failed to fetch employees');
+        }
+        const employees = await empRes.json();
+        
+        allEmployees = employees.map(emp => ({
+          id: emp.id,
+          name: emp.name,
+          employeeId: emp.employeeId
+        }));
+        
+        // For supervisors, we'll use employees with certain positions or create a separate endpoint
+        allSupervisors = employees.filter(emp => 
+          emp.position && (
+            emp.position.toLowerCase().includes('supervisor') ||
+            emp.position.toLowerCase().includes('manager') ||
+            emp.position.toLowerCase().includes('lead')
+          )
+        ).map(emp => ({
+          id: emp.id,
+          name: emp.name
+        }));
+        
+        // Update employee checkboxes
+        const container = document.getElementById('employeeCheckboxContainer');
+        if (allEmployees.length === 0) {
+          container.innerHTML = '<div style="padding: 10px; text-align: center; color: #666;">No employees found. Please add employees first.</div>';
+        } else {
+          container.innerHTML = allEmployees.map(emp => `
+            <label class="employee-item" style="display: block; padding: 3px 0;">
+              <input type="checkbox" value="${emp.name}" data-id="${emp.id}" style="margin-right: 5px;">
+              ${emp.name} (${emp.employeeId})
+            </label>
+          `).join('');
+        }
+        
+        // Add event listeners to checkboxes
+        container.addEventListener('change', updateSelectedCount);
+        
+        // Setup search functionality
+        document.getElementById('employeeSearch').addEventListener('input', filterEmployees);
+        
+        // Update supervisor dropdown
+        const supSel = document.getElementById('teamSup');
+        if (allSupervisors.length === 0) {
+          supSel.innerHTML = '<option value="">No supervisors available</option>';
+        } else {
+          supSel.innerHTML = '<option value="">Select Supervisor</option>' + 
+            allSupervisors.map(s => 
+              `<option value="${s.name}">${s.name}</option>`
+            ).join('');
+        }
+      } catch (err) {
+        showError('Failed to load employees: ' + err.message);
+        console.error(err);
+        
+        // Show empty state
+        const container = document.getElementById('employeeCheckboxContainer');
+        container.innerHTML = '<div style="padding: 10px; text-align: center; color: #red;">Error loading employees. Please check if the server is running.</div>';
+      }
+    }
+
+    async function loadDepartments() {
+      try {
+        const res = await fetch(`${API}/departments`);
+        allDepartments = await res.json();
+        
+        const deptSel = document.getElementById('teamDept');
+        deptSel.innerHTML = '<option value="">Select Department</option>' + 
+          allDepartments.map(d => 
+            `<option value="${d._id}">${d.name}</option>`
+          ).join('');
+        
+        // Update department list display
+        const deptList = document.getElementById('deptList');
+        deptList.innerHTML = allDepartments.length > 0 
+          ? allDepartments.map(dept => 
+              `<div>
+                <strong>${dept.name}</strong>
+                <button onclick="deleteDepartment('${dept._id}')">Delete</button>
+                <div>Tasks: ${dept.tasks.join(', ')}</div>
+              </div>`
+            ).join('')
+          : '<div>No departments found</div>';
+      } catch (err) {
+        showError('Failed to load departments');
+        console.error(err);
+      }
+    }
+
+    async function loadDepartmentTasks() {
+      const deptId = document.getElementById('teamDept').value;
+      if (!deptId) {
+        document.getElementById('departmentTasks').innerHTML = '';
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API}/departments/${deptId}/tasks`);
+        const tasks = await res.json();
+        
+        const tasksList = document.getElementById('departmentTasks');
+        tasksList.innerHTML = tasks.length > 0 
+          ? `<strong>Department Tasks:</strong> ${tasks.join(', ')}`
+          : 'No tasks defined for this department';
+      } catch (err) {
+        showError('Failed to load department tasks');
+        console.error(err);
+      }
+    }
+
+    async function loadTeams() {
+      try {
+        const res = await fetch(`${API}/teams`);
+        const teams = await res.json();
+        
+        const teamsList = document.getElementById('teamsList');
+        teamsList.innerHTML = teams.length > 0 
+          ? teams.map(team => `
+              <div style="margin-bottom: 15px; padding: 10px; border: 1px solid #eee;">
+                <h3>${team.name} (${team.department?.name || 'No Department'})</h3>
+                <div><strong>Supervisor:</strong> ${team.supervisor}</div>
+                <div><strong>Employees:</strong> ${team.employees.join(', ')}</div>
+                <div><strong>Tasks:</strong> ${team.tasks?.join(', ') || 'No tasks'}</div>
+                <button onclick="deleteTeam('${team._id}')">Delete Team</button>
+              </div>`
+            ).join('')
+          : '<div>No teams found</div>';
+      } catch (err) {
+        showError('Failed to load teams');
+        console.error(err);
+      }
+    }
+
+    async function addDepartment() {
+      const name = document.getElementById('deptName').value.trim();
+      const tasks = document.getElementById('deptTasks').value
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t);
+      
+      if (!name || tasks.length === 0) {
+        showError('Department name and at least one task are required');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/departments`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, tasks })
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.errors?.[0]?.msg || 'Failed to add department');
+        }
+        
+        // Clear form and reload data
+        document.getElementById('deptName').value = '';
+        document.getElementById('deptTasks').value = '';
+        await loadDepartments();
+        showSuccess('Department added successfully');
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    }
+
+    async function addTeam() {
+      console.log('Add team button clicked');
+      const name = document.getElementById('teamName').value.trim();
+      const department = document.getElementById('teamDept').value;
+      const supervisor = document.getElementById('teamSup').value;
+      // Get selected employees from checkboxes
+      const employees = [];
+      document.querySelectorAll('#employeeCheckboxContainer input[type="checkbox"]:checked').forEach(checkbox => {
+        employees.push(checkbox.value);
+      });
+
+      console.log('Form values:', { name, department, supervisor, employees });
+
+      if (!name || !department || !supervisor || employees.length === 0) {
+        const errorMsg = 'All fields are required. ' +
+          (!name ? 'Team name is required. ' : '') +
+          (department === '' ? 'Please select a department. ' : '') +
+          (!supervisor ? 'Please select a supervisor. ' : '') +
+          (employees.length === 0 ? 'Please select at least one employee.' : '');
+        
+        showError(errorMsg);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API}/teams`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            name, 
+            department,
+            supervisor,
+            employees 
+          })
+        });
+        
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.errors?.[0]?.msg || 'Failed to add team');
+        }
+        
+        // Clear form and reload data
+        document.getElementById('teamName').value = '';
+        await loadTeams();
+        showSuccess('Team created successfully');
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    }
+
+    async function deleteDepartment(id) {
+      if (!confirm('Are you sure you want to delete this department? This will remove all associated teams.')) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API}/departments/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to delete department');
+        }
+        
+        await Promise.all([loadDepartments(), loadTeams()]);
+        showSuccess('Department deleted successfully');
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    }
+
+    async function deleteTeam(id) {
+      if (!confirm('Are you sure you want to delete this team?')) {
+        return;
+      }
+      
+      try {
+        const res = await fetch(`${API}/teams/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (!res.ok) {
+          throw new Error('Failed to delete team');
+        }
+        
+        await loadTeams();
+        showSuccess('Team deleted successfully');
+      } catch (err) {
+        showError(err.message);
+        console.error(err);
+      }
+    }
+
+    function showError(message) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error';
+      errorDiv.textContent = message;
+      document.body.prepend(errorDiv);
+      setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    function showSuccess(message) {
+      const successDiv = document.createElement('div');
+      successDiv.className = 'success';
+      successDiv.textContent = message;
+      document.body.prepend(successDiv);
+      setTimeout(() => successDiv.remove(), 5000);
+    }
+  </script>
+</body>
+</html>

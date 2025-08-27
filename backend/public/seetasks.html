@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>View Assigned Tasks</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background: #007bff;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <h2>Assigned Tasks</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Zone Name</th>
+        <th>Team</th>
+        <th>Task</th>
+        <th>Assigned At</th>
+      </tr>
+    </thead>
+    <tbody id="tasksBody">
+      <tr><td colspan="4">Loading tasks...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function loadTasks() {
+      try {
+        const res = await fetch('http://localhost:5000/api/tasks');
+        if (!res.ok) throw new Error('Failed to load tasks');
+        const tasks = await res.json();
+
+        const tbody = document.getElementById('tasksBody');
+        if (!tasks.length) {
+          tbody.innerHTML = '<tr><td colspan="4">No tasks assigned.</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        tasks.forEach(task => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${task.zoneName}</td>
+            <td>${task.team ? task.team.name : 'N/A'}</td>
+            <td>${task.task}</td>
+            <td>${new Date(task.assignedAt).toLocaleString()}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error loading tasks:', err);
+        const tbody = document.getElementById('tasksBody');
+        tbody.innerHTML = '<tr><td colspan="4">Error loading tasks.</td></tr>';
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', loadTasks);
+  </script>
+</body>
+</html>

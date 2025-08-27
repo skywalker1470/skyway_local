@@ -1,0 +1,96 @@
+/* CheckIn.module.css */
+
+.container {
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 20px 30px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #003366;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroup {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.label {
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: block;
+  color: #004080;
+}
+
+.input {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #6699cc;
+  background-color: #f0f7ff;
+  font-size: 1rem;
+  color: #003366;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+.input:focus {
+  border-color: #004080;
+  outline: none;
+}
+
+.webcamBox {
+  width: 350px;
+  height: 240px;
+  background: #222;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.capturedImage {
+  margin-top: 10px;
+  max-width: 340px;
+  border-radius: 8px;
+}
+
+.button {
+  cursor: pointer;
+  padding: 12px 40px;
+  font-size: 1rem;
+  font-weight: bold;
+  background-color: #004080;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  margin-top: 15px;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+.button:hover {
+  background-color: #003366;
+  transform: scale(1.05);
+}
+
+.message {
+  margin-top: 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #d32f2f; /* red */
+  min-height: 1.2rem;
+  text-align: center;
+}
