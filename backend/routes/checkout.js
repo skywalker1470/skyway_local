@@ -58,7 +58,7 @@ router.get('/', auth(['manager']), async (req, res) => {
   try {
     const checkouts = await Checkout.find()
       .populate({ path: 'employee', select: 'employeeId' })       // get employeeId from employee
-      .populate({ path: 'checkin', select: 'timestamp' });
+      .populate({ path: 'checkin', select: ['timestamp' , 'photoUrl'] });
 
     // Convert timestamps to IST
     const checkoutsIST = checkouts.map(co => ({
