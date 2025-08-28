@@ -13,6 +13,7 @@ export default function CheckIn() {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [buttonDisabled, setButtonDisabled] = useState(false);
   const webcamRef = useRef<Webcam>(null);
+  const intervalIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -29,8 +30,6 @@ export default function CheckIn() {
   }, []);
 
   useEffect(() => {
-    let intervalId: number;
-
     const pollApprovalStatus = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -52,12 +51,18 @@ export default function CheckIn() {
         if (data.status === 'approved') {
           setApproved(true);
           setRejected(false);
-          clearInterval(intervalId);
+          if (intervalIdRef.current !== null) {
+            clearInterval(intervalIdRef.current);
+            intervalIdRef.current = null;
+          }
         } else if (data.status === 'rejected') {
           setRejected(true);
           setApproved(false);
           setMessage('Your check-in request has been rejected by the manager.');
-          clearInterval(intervalId);
+          if (intervalIdRef.current !== null) {
+            clearInterval(intervalIdRef.current);
+            intervalIdRef.current = null;
+          }
           localStorage.removeItem('checkinId');
         } else {
           setRejected(false);
@@ -69,10 +74,14 @@ export default function CheckIn() {
       }
     };
 
-    intervalId = window.setInterval(pollApprovalStatus, 5000);
     pollApprovalStatus();
+    intervalIdRef.current = window.setInterval(pollApprovalStatus, 5000);
 
-    return () => clearInterval(intervalId);
+    return () => {
+      if (intervalIdRef.current !== null) {
+        clearInterval(intervalIdRef.current);
+      }
+    };
   }, []);
 
   const capture = () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import './ManagerApproval.css'
+import './ManagerApproval.css';
 
 interface Employee {
   employeeId: string;
@@ -20,6 +20,8 @@ interface CheckinRequest {
   reviewComments?: string;
 }
 
+const API_BASE_URL = " http://localhost:5000/api";
+
 const ManagerDashboard: React.FC = () => {
   const [requests, setRequests] = useState<CheckinRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,16 +40,21 @@ const ManagerDashboard: React.FC = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No authentication token found. Please login.");
-      const res = await fetch("http://localhost:5000/api/checkin/approval", {
+
+      // FIXED: Use /checkin/approval endpoint
+      const res = await fetch(`${API_BASE_URL}/checkin/approval`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
+
       if (res.status === 401) throw new Error("Unauthorized. Please login again.");
       if (!res.ok) throw new Error("Failed to fetch check-in requests");
+
       const data = await res.json();
       if (!Array.isArray(data)) throw new Error("Invalid format from API");
+
       setRequests(
         data.map((item: any) => ({
           ...item,
@@ -78,8 +85,10 @@ const ManagerDashboard: React.FC = () => {
         return;
       }
       const reviewComments = comments[id] || "";
+
+      // FIXED: Use /checkin/approval/:id/review endpoint
       const res = await fetch(
-        `http://localhost:5000/api/checkin/approval/${id}/review`,
+        `${API_BASE_URL}/checkin/approval/${id}/review`,
         {
           method: "POST",
           headers: {
@@ -120,9 +129,7 @@ const ManagerDashboard: React.FC = () => {
   return (
     <div className="container">
       <h1>Manager Dashboard - Pending Check-in Requests</h1>
-      <button onClick={fetchRequests} className="refreshButton">
-        See new requests
-      </button>
+      <button onClick={fetchRequests} className="refreshButton">See new requests</button>
       {requests.length === 0 ? (
         <p>No pending check-in requests.</p>
       ) : (
@@ -143,8 +150,8 @@ const ManagerDashboard: React.FC = () => {
               {requests.map((req) => (
                 <tr key={req.id}>
                   <td>
-                    {req.employee
-                      ? `${req.employee.firstName} ${req.employee.lastName} (${req.employee.employeeId})`
+                    {req.employee 
+                      ? `${req.employee.firstName} ${req.employee.lastName} (${req.employee.employeeId})` 
                       : "Unknown Employee"}
                   </td>
                   <td>{req.officeName || "N/A"}</td>
@@ -161,13 +168,11 @@ const ManagerDashboard: React.FC = () => {
                     )}
                   </td>
                   <td>
-                    Lat: {req.lat !== undefined && req.lat !== null ? req.lat.toFixed(4) : "?"}
-                    , Lng: {req.lng !== undefined && req.lng !== null ? req.lng.toFixed(4) : "?"}
+                    Lat: {req.lat !== undefined && req.lat !== null ? req.lat.toFixed(4) : "?"}, 
+                    Lng: {req.lng !== undefined && req.lng !== null ? req.lng.toFixed(4) : "?"}
                   </td>
                   <td>
-                    {req.timestamp
-                      ? new Date(req.timestamp).toLocaleString()
-                      : "No time"}
+                    {req.timestamp ? new Date(req.timestamp).toLocaleString() : "No time"}
                   </td>
                   <td>
                     <input
@@ -200,10 +205,7 @@ const ManagerDashboard: React.FC = () => {
           </table>
 
           {modalImage && (
-            <div
-              className="modalOverlay"
-              onClick={() => setModalImage(null)}
-            >
+            <div className="modalOverlay" onClick={() => setModalImage(null)}>
               <img src={modalImage} alt="Full screen" className="modalImage" />
             </div>
           )}

@@ -5,6 +5,7 @@
   width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;         /* Stack children vertically */
   justify-content: center;
   align-items: center;
   background: transparent;
@@ -74,3 +75,15 @@
   margin-top: 1rem;
   color: #990000;
 }
+
+.logoContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  max-width: 200px;
+  height: auto;
+}
+

@@ -1,6 +1,6 @@
 import styles from './BackgroundCellTowers.module.css';
 
-function CellTowerSVG({ size = 48, color = "#ffffff", opacity = 0.22 }) {
+function CellTowerSVG({ size = 48, color = "#003366", opacity = 0.1 }) {
   return (
     <svg
       width={size}
@@ -21,8 +21,8 @@ function CellTowerSVG({ size = 48, color = "#ffffff", opacity = 0.22 }) {
 }
 
 export default function BackgroundCellTowers() {
-  const ROWS = 3;
-  const COLUMNS = 7;
+  const ROWS = 5;
+  const COLUMNS = 5;
 
   const towerPositions = [];
 

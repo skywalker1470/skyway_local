@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { loginUser } from '../api/api';
 import styles from './LoginForm.module.css';
 import BackgroundCellTowers from './BackgroundCellTowers';
+import logo from './assets/images/logo.png'; // Correct path
 
 interface User {
   id: string;
@@ -22,7 +23,6 @@ export default function LoginForm({ onLogin }: { onLogin: (user: User) => void }
       const res = await loginUser(employeeId, password);
       localStorage.setItem('token', res.token);
 
-      // Role-based welcome message
       if (res.user.role === 'manager') {
         setMessage(`Welcome, Manager ${res.user.name}`);
       } else if (res.user.role === 'employee') {
@@ -47,8 +47,14 @@ export default function LoginForm({ onLogin }: { onLogin: (user: User) => void }
       {/* Background animation */}
       <BackgroundCellTowers />
 
-      {/* Styled form */}
+      {/* Wrapper for both logo and form */}
       <div className={styles.formWrapper}>
+        {/* Logo */}
+        <div className={styles.logoContainer}>
+          <img src={logo} alt="Skyway Networks Logo" className={styles.logo} />
+        </div>
+
+        {/* Login Form */}
         <form onSubmit={handleSubmit} className={styles.formCard}>
           <h2 className={styles.formTitle}>Login</h2>
           <input
