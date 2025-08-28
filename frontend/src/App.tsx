@@ -11,7 +11,7 @@ import LoginForm from './components/LoginForm';
 import CheckIn from './components/CheckIn';
 import ManagerApproval from './components/ManagerApproval';
 import PastApprovals from './components/PastApprovals';
-
+import './App.css';
 type User = {
   id: string;
   employeeId: string;

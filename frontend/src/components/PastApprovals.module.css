@@ -1,0 +1,120 @@
+/* PastApprovals.module.css */
+
+.container {
+  background-color: #f4f4f4;
+  padding: 2rem;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
+    Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  color: #003366;
+}
+
+h2 {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  color: #03305d;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.1);
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table th,
+.table td {
+  border: 1px solid #ddd;
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.table th {
+  background-color: #e6f0ff;
+  font-weight: 600;
+  color: #003366;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.table tbody tr:hover {
+  background-color: #ddeeff;
+  cursor: default;
+}
+
+.backButton {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 8px 16px;
+  background-color: #03305d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+  text-align: center;
+}
+
+.backButton:hover {
+  background-color: #001f3f;
+}
+.photoColumn {
+  width: 60px;
+  text-align: center;
+}
+
+.photoImg {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  position: relative;
+  max-width: 90vw;    /* Increased from 90vw */
+  max-height: 90vw;   /* Increased from 90vh */
+  border-radius: 8px;
+  background: #00000000;
+ 
+  box-sizing: border-box;
+}
+
+.modalImage {
+  max-width: 100%;
+  max-height: 80vh;   /* Increased from 80vh */
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
+.modalCloseBtn {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  color: #333;
+  cursor: pointer;
+  line-height: 1;
+}
