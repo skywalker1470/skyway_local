@@ -1,5 +1,3 @@
-/* CheckIn.module.css */
-
 .container {
   max-width: 450px;
   margin: 40px auto;
@@ -27,6 +25,7 @@
   margin-bottom: 6px;
   display: block;
   color: #004080;
+  text-align: center;
 }
 
 .input {
@@ -93,4 +92,13 @@
   color: #d32f2f; /* red */
   min-height: 1.2rem;
   text-align: center;
+}
+
+/* Center the heading in the container */
+.container h2,
+.container h1 {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }

@@ -15,21 +15,26 @@ export default function CheckIn() {
   const webcamRef = useRef<Webcam>(null);
   const intervalIdRef = useRef<number | null>(null);
 
-  useEffect(() => {
+  // Centralized fetch location function for reuse
+  const fetchLocation = () => {
     if (navigator.geolocation) {
+      setMessage('Getting location...');
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           setLat(pos.coords.latitude.toString());
           setLng(pos.coords.longitude.toString());
+          setMessage('');
         },
-        () => setMessage('Could not get location.')
+        () => setMessage('Could not get location. Please allow location access and try again.')
       );
     } else {
       setMessage('Geolocation not supported.');
     }
-  }, []);
+  };
 
   useEffect(() => {
+    fetchLocation(); // Fetch location on component mount
+
     const pollApprovalStatus = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -73,10 +78,8 @@ export default function CheckIn() {
         console.error('Polling error:', error);
       }
     };
-
     pollApprovalStatus();
     intervalIdRef.current = window.setInterval(pollApprovalStatus, 5000);
-
     return () => {
       if (intervalIdRef.current !== null) {
         clearInterval(intervalIdRef.current);
@@ -110,15 +113,12 @@ export default function CheckIn() {
       setMessage(res.message || 'Success! Check-in recorded.');
       setRejected(false);
       setApproved(false);
-
       setTimeout(() => {
         setButtonDisabled(false); // Re-enable after 10 seconds
       }, 10000);
-
       setTimeout(() => {
         setMessage(''); // Clear message after 12 seconds
       }, 12000);
-
     } catch (err: any) {
       setButtonDisabled(false);
       setMessage(err.response?.data?.message || 'Check-in failed');
@@ -141,6 +141,12 @@ export default function CheckIn() {
           <label className={styles.label}>Longitude:</label>
           <input type="text" value={lng} readOnly className={styles.input} />
         </div>
+
+        {/* New button to force refresh location */}
+        <button type="button" onClick={fetchLocation} className={styles.button} style={{ marginBottom: '15px' }}>
+          Refresh Location
+        </button>
+
         <div className={styles.formGroup}>
           <div className={styles.webcamBox}>
             <Webcam
@@ -166,11 +172,7 @@ export default function CheckIn() {
           Check In
         </button>
       </form>
-      {rejected && (
-        <p className={styles.message}>
-          Your check-in request has been rejected by the manager.
-        </p>
-      )}
+      {rejected && <p className={styles.message}>Your check-in request has been rejected by the manager.</p>}
       {message && !rejected && <p className={styles.message}>{message}</p>}
     </>
   );

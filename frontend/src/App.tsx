@@ -12,14 +12,15 @@ import CheckIn from './components/CheckIn';
 import ManagerApproval from './components/ManagerApproval';
 import PastApprovals from './components/PastApprovals';
 import './App.css';
+
 type User = {
   id: string;
   employeeId: string;
-  role: string;
+  role: string; // 'employee' or 'manager'
   name: string;
 };
 
-// ProtectedRoute wrapper with role-based access
+// ProtectedRoute for role-based access control
 const ProtectedRoute: React.FC<{ allowedRoles: string[]; user: User | null }> = ({
   allowedRoles,
   user,
@@ -28,12 +29,10 @@ const ProtectedRoute: React.FC<{ allowedRoles: string[]; user: User | null }> = 
     // Not logged in
     return <Navigate to="/" replace />;
   }
-
   if (!allowedRoles.includes(user.role)) {
     // Logged in but role not allowed
     return <p>Access denied. You do not have permission to view this page.</p>;
   }
-
   return <Outlet />;
 };
 
@@ -50,7 +49,7 @@ export default function App() {
   const handleLogin = (user: User) => {
     setLoggedInUser(user);
     localStorage.setItem('loggedInUser', JSON.stringify(user));
-    localStorage.setItem('employeeId', user.id);
+    localStorage.setItem('employeeId', user.id); // Save MongoDB ObjectId here
   };
 
   const handleLogout = () => {
@@ -66,29 +65,19 @@ export default function App() {
 
   return (
     <Router>
-      <div id="root">
+      <div className="employee-portal">
         <h1>Employee Portal</h1>
-        <p className="loginStatus">
-          Logged in as <strong>{loggedInUser.name}</strong> ({loggedInUser.role})
-          <button
-            onClick={handleLogout}
-            style={{
-              marginLeft: '14px',
-              padding: '6px 16px',
-              cursor: 'pointer',
-              background: '#111',
-              borderRadius: '7px',
-              color: '#fff',
-              fontWeight: 500,
-              border: 'none',
-            }}
-          >
+        <div className="loginStatus">
+          <div>
+            Hi, <strong>{loggedInUser.name}</strong> ({loggedInUser.role})
+          </div>
+          <button className="logoutButton" onClick={handleLogout}>
             Logout
           </button>
-        </p>
+        </div>
 
         <Routes>
-          {/* Home route: redirect based on role */}
+          {/* Role-based home route */}
           <Route
             path="/"
             element={
@@ -102,13 +91,13 @@ export default function App() {
             }
           />
 
-          {/* Routes protected for manager role */}
+          {/* Protected routes for manager */}
           <Route element={<ProtectedRoute allowedRoles={['manager']} user={loggedInUser} />}>
             <Route path="/manager-approval" element={<ManagerApproval />} />
             <Route path="/past-approvals" element={<PastApprovals />} />
           </Route>
 
-          {/* Catch unknown routes */}
+          {/* Catch-all redirect */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>

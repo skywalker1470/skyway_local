@@ -1,8 +1,7 @@
-/* App.css - Global Styles */
-
+/* Global Styles for html, body and root */
 html, body, #root {
   height: 100%;
-  min-height: 130vh;
+  min-height: 140vh;
   width: 100%;
   min-width: 100vw;
   background-color: #f4f4f4;
@@ -17,36 +16,81 @@ html, body, #root {
   box-sizing: inherit;
 }
 
+/* Employee Portal Header Title */
+.employee-portal h1 {
+  font-size: 3rem;
+  text-align: center;
+  color: #03305D;
+  margin-bottom: 24px;
+  margin-top: 0;
+  font-weight: bold;
+}
+
+/* Responsive font size for mobile smaller devices */
+@media (max-width: 480px) {
+  .employee-portal h1 {
+    font-size: 2rem;
+    line-height: 1.1;
+    word-break: break-word;
+  }
+}
+
+/* Login Status Section */
+.loginStatus {
+  color: #03305D;
+  margin-top: 32px;
+  font-size: 1.02rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;      /* Stack greeting + button vertically */
+  align-items: center;         /* Center horizontally */
+  justify-content: center;
+  gap: 12px;                   /* Space between greeting and button */
+  text-align: center;
+}
+
+/* Logout Button Styling */
+.logoutButton {
+  background: #222;            /* Dark background */
+  color: #fff;                 /* White text */
+  border: none;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 1rem;
+  cursor: pointer;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: background 0.2s ease;
+  margin-top: 10px;
+}
+.logoutButton:hover {
+  background: #444;            /* Slightly lighter on hover */
+}
+
+/* Logo Styling with Animation */
 .logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
   transition: filter 300ms ease-in-out;
 }
-
 .logo:hover {
   filter: drop-shadow(0 0 2em #646cffaa);
 }
-
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
-
 @keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
-
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
   }
 }
 
+/* Card Style */
 .card {
   background: white;
   padding: 2em;
@@ -57,12 +101,15 @@ html, body, #root {
   color: #003366;
 }
 
+/* Text Small Note */
 .read-the-docs {
   color: #888;
   text-align: center;
   margin-top: 16px;
   font-size: 0.9rem;
 }
+
+/* Login Status alternative */
 .loginStatus {
   color: #03305D;
   margin-top: 32px;
@@ -75,3 +122,24 @@ html, body, #root {
   text-align: center;
 }
 
+/* Responsive tweaks can be added here */
+@media (max-width: 768px) {
+  .card, .container {
+    max-width: 95%;
+    padding: 1em;
+  }
+  .employee-portal h1 {
+    font-size: 2.5rem;
+  }
+}
+@media (max-width: 480px) {
+  .logo {
+    height: 4em;
+    padding: 1em;
+  }
+  .employee-portal h1 {
+    font-size: 1.8rem;
+  }
+}
+
+/* Other global resets, buttons, inputs, tables can be included as needed */
