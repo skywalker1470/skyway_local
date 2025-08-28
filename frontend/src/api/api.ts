@@ -1,5 +1,6 @@
 import axios from 'axios';
 
+// Updated base URL to your Railway backend
 const API_URL = 'http://localhost:5000/api';
 
 // Login employee
@@ -53,9 +54,18 @@ export const reviewCheckin = async (
   );
   return response.data;
 };
- // Employee Checkout
- export const checkout = async (employeeId: string, checkinId: string, token: string) => {
-  const response = await axios.post(`${API_URL}/checkout`, { employeeId, checkinId }, {
+
+// Employee Checkout
+export const checkout = async (employeeId: string, checkinId: string, token: string) => {
+  const response = await axios.post(`${API_URL}/checkout`, { employeeId, checkinId}, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+};
+
+// Manager - fetch all checkouts (for PastApprovals page)
+export const fetchCheckouts = async (token: string) => {
+  const response = await axios.get(`${API_URL}/checkout`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;

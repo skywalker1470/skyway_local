@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import './ManagerApproval.css';
 
 interface Employee {
@@ -20,7 +21,7 @@ interface CheckinRequest {
   reviewComments?: string;
 }
 
-const API_BASE_URL = " http://localhost:5000/api";
+const API_BASE_URL = "http://localhost:5000/api";
 
 const ManagerDashboard: React.FC = () => {
   const [requests, setRequests] = useState<CheckinRequest[]>([]);
@@ -29,6 +30,8 @@ const ManagerDashboard: React.FC = () => {
   const [actionLoadingIds, setActionLoadingIds] = useState<string[]>([]);
   const [comments, setComments] = useState<{ [id: string]: string }>({});
   const [modalImage, setModalImage] = useState<string | null>(null);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchRequests();
@@ -41,7 +44,6 @@ const ManagerDashboard: React.FC = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No authentication token found. Please login.");
 
-      // FIXED: Use /checkin/approval endpoint
       const res = await fetch(`${API_BASE_URL}/checkin/approval`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -86,7 +88,6 @@ const ManagerDashboard: React.FC = () => {
       }
       const reviewComments = comments[id] || "";
 
-      // FIXED: Use /checkin/approval/:id/review endpoint
       const res = await fetch(
         `${API_BASE_URL}/checkin/approval/${id}/review`,
         {
@@ -129,7 +130,19 @@ const ManagerDashboard: React.FC = () => {
   return (
     <div className="container">
       <h1>Manager Dashboard - Pending Check-in Requests</h1>
-      <button onClick={fetchRequests} className="refreshButton">See new requests</button>
+
+      {/* New button added for navigation */}
+      <button 
+        onClick={() => navigate('/past-approvals')} 
+        className="navigateButton"
+        style={{ marginBottom: 20, padding: '8px 16px', cursor: 'pointer' }}
+      >
+        View Past Approvals
+      </button>
+
+      <button onClick={fetchRequests} className="refreshButton">
+        See new requests
+      </button>
       {requests.length === 0 ? (
         <p>No pending check-in requests.</p>
       ) : (
