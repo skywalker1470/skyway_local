@@ -11,6 +11,7 @@ import LoginForm from './components/LoginForm';
 import CheckIn from './components/CheckIn';
 import ManagerApproval from './components/ManagerApproval';
 import PastApprovals from './components/PastApprovals';
+import CheckinDetails from './components/CheckinDetails';  // Newly added import
 import './App.css';
 
 type User = {
@@ -95,6 +96,7 @@ export default function App() {
           <Route element={<ProtectedRoute allowedRoles={['manager']} user={loggedInUser} />}>
             <Route path="/manager-approval" element={<ManagerApproval />} />
             <Route path="/past-approvals" element={<PastApprovals />} />
+            <Route path="/checkin-details" element={<CheckinDetails />} />{/* Newly added route */}
           </Route>
 
           {/* Catch-all redirect */}

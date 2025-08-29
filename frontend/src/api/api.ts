@@ -38,6 +38,14 @@ export const fetchPendingCheckins = async (token: string) => {
   return response.data;
 };
 
+// Manager - fetch approval history (past approvals)
+export const fetchApprovalHistory = async (token: string) => {
+  const response = await axios.get(`${API_URL}/approval/history`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+};
+
 // Manager - review a check-in approval (approve/reject with optional comments)
 export const reviewCheckin = async (
   id: string,

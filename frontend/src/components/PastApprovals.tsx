@@ -25,76 +25,67 @@ interface Checkout {
 
 const PastApprovals: React.FC = () => {
   const [checkouts, setCheckouts] = useState<Checkout[]>([]);
+  const [filteredCheckouts, setFilteredCheckouts] = useState<Checkout[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalImage, setModalImage] = useState<string | null>(null);
   const [dateFrom, setDateFrom] = useState<string>(''); // yyyy-mm-dd format
   const [dateTo, setDateTo] = useState<string>('');
+  const [employeeFilter, setEmployeeFilter] = useState<string>('');
 
   const navigate = useNavigate();
 
   // Convert date string (yyyy-mm-dd) assumed in IST midnight to UTC ISO string
   const istDateToUTCISOString = (dateStr: string) => {
-    // IST is UTC +5:30 (330 minutes)
     const [year, month, day] = dateStr.split('-').map(Number);
-    // Create a date at midnight IST
-    const istDate = new Date(Date.UTC(year, month - 1, day)); // midnight UTC on that day
-    // Subtract 330 minutes to get UTC equivalent of IST midnight for that day
+    const istDate = new Date(Date.UTC(year, month - 1, day));
     istDate.setMinutes(istDate.getMinutes() - 330);
     return istDate.toISOString();
   };
 
-  // Accept optional date range for filtering
   const loadCheckouts = async (from?: string, to?: string) => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token') || '';
 
-      // Call API with optional date params
       const data = await fetchCheckouts(token, from, to);
       setCheckouts(data);
       setError(null);
     } catch (err: any) {
       setError(err.message || 'Failed to fetch checkouts');
+      setCheckouts([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Filter checkouts by employeeId substring (case-insensitive), and base data on date filters
+  useEffect(() => {
+    const filtered = employeeFilter
+      ? checkouts.filter((checkout) =>
+          checkout.employee?.employeeId
+            .toLowerCase()
+            .includes(employeeFilter.toLowerCase())
+        )
+      : checkouts;
+    setFilteredCheckouts(filtered);
+  }, [employeeFilter, checkouts]);
+
   useEffect(() => {
     loadCheckouts();
   }, []);
 
-  // Trigger filter on button click
   const handleFilter = () => {
     if (dateFrom && dateTo) {
-      // Convert 'from' date to UTC ISO string for IST midnight start (inclusive)
       const fromISO = istDateToUTCISOString(dateFrom);
-
-      // Convert 'to' date to UTC ISO string of next day IST midnight (exclusive)
       const toDateObj = new Date(dateTo);
       toDateObj.setDate(toDateObj.getDate() + 1);
-      const nextDayStr = toDateObj.toISOString().slice(0, 10); // yyyy-mm-dd of next day
+      const nextDayStr = toDateObj.toISOString().slice(0, 10);
       const toISO = istDateToUTCISOString(nextDayStr);
-
       loadCheckouts(fromISO, toISO);
     } else {
-      // If no dates selected, load all
       loadCheckouts();
     }
-  };
-
-  const getDuration = (checkinTimestamp: string | null, checkoutTimestamp: string) => {
-    if (!checkinTimestamp) return 'N/A';
-    const start = new Date(checkinTimestamp).getTime();
-    const end = new Date(checkoutTimestamp).getTime();
-    if (isNaN(start) || isNaN(end)) return 'Invalid date';
-    const diffMs = end - start;
-    if (diffMs < 0) return 'Invalid duration';
-    const diffMins = Math.floor(diffMs / (1000 * 60));
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return `${hours}h ${mins}m`;
   };
 
   if (loading) return <div className={styles.container}>Loading...</div>;
@@ -108,7 +99,7 @@ const PastApprovals: React.FC = () => {
         Back to Manager Approval
       </button>
 
-      {/* Date filter inputs */}
+      {/* Filters */}
       <div style={{ marginTop: 20, marginBottom: 20 }}>
         <label>
           From:{' '}
@@ -128,11 +119,22 @@ const PastApprovals: React.FC = () => {
             min={dateFrom || undefined}
           />
         </label>
+
+        <label style={{ marginLeft: 10 }}>
+          Employee ID:{' '}
+          <input
+            type="text"
+            value={employeeFilter}
+            onChange={(e) => setEmployeeFilter(e.target.value)}
+            placeholder="Filter by employee ID"
+            style={{ padding: '4px 6px' }}
+          />
+        </label>
+
         <button onClick={handleFilter} style={{ marginLeft: 10 }}>
           Apply Date Filter
         </button>
 
-        {/* Refresh button */}
         <button onClick={() => loadCheckouts()} className={styles.refreshButton} style={{ marginLeft: 10 }}>
           See new checkouts
         </button>
@@ -149,26 +151,49 @@ const PastApprovals: React.FC = () => {
           </tr>
         </thead>
         <tbody>
-          {checkouts.map(({ _id, employee, checkin, timestamp }) => (
-            <tr key={_id}>
-              <td>{employee?.employeeId || 'N/A'}</td>
-              <td>{checkin?.timestamp ? new Date(checkin.timestamp).toLocaleString() : 'N/A'}</td>
-              <td>{new Date(timestamp).toLocaleString()}</td>
-              <td>{getDuration(checkin?.timestamp || null, timestamp)}</td>
-              <td>
-                {checkin?.photoUrl ? (
-                  <img
-                    src={checkin.photoUrl}
-                    alt="Checkin Photo"
-                    style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
-                    onClick={() => setModalImage(checkin.photoUrl!)}
-                  />
-                ) : (
-                  'No photo'
-                )}
+          {filteredCheckouts.length === 0 ? (
+            <tr>
+              <td colSpan={5} style={{ textAlign: 'center' }}>
+                No records found.
               </td>
             </tr>
-          ))}
+          ) : (
+            filteredCheckouts.map(({ _id, employee, checkin, timestamp }) => {
+              const getDuration = (checkinTimestamp: string | null, checkoutTimestamp: string) => {
+                if (!checkinTimestamp) return 'N/A';
+                const start = new Date(checkinTimestamp).getTime();
+                const end = new Date(checkoutTimestamp).getTime();
+                if (isNaN(start) || isNaN(end)) return 'Invalid date';
+                const diffMs = end - start;
+                if (diffMs < 0) return 'Invalid duration';
+                const diffMins = Math.floor(diffMs / (1000 * 60));
+                const hours = Math.floor(diffMins / 60);
+                const mins = diffMins % 60;
+                return `${hours}h ${mins}m`;
+              };
+
+              return (
+                <tr key={_id}>
+                  <td>{employee?.employeeId || 'N/A'}</td>
+                  <td>{checkin?.timestamp ? new Date(checkin.timestamp).toLocaleString() : 'N/A'}</td>
+                  <td>{new Date(timestamp).toLocaleString()}</td>
+                  <td>{getDuration(checkin?.timestamp || null, timestamp)}</td>
+                  <td>
+                    {checkin?.photoUrl ? (
+                      <img
+                        src={checkin.photoUrl}
+                        alt="Checkin Photo"
+                        style={{ width: 50, height: 50, objectFit: 'cover', borderRadius: 4, cursor: 'pointer' }}
+                        onClick={() => setModalImage(checkin.photoUrl!)}
+                      />
+                    ) : (
+                      'No photo'
+                    )}
+                  </td>
+                </tr>
+              );
+            })
+          )}
         </tbody>
       </table>
 

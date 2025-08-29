@@ -31,8 +31,8 @@ app.use('/api/zones', zoneRoutes);
 app.use('/api/departments', departmentRoutes);
 app.use('/api/teams', teamRoutes);
 app.use('/api/checkin', checkinRoutes);
-app.use('/api/checkin/approval', approvalRoutes);
-app.use('/api/checkout', checkoutRoutes);   // ✅ FIXED (was mounted wrong earlier)
+app.use('/api/checkin/approval', approvalRoutes); // Manager approval routes
+app.use('/api/checkout', checkoutRoutes);
 
 // ✅ Basic root route
 app.get('/', (req, res) => {

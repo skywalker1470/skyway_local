@@ -131,18 +131,28 @@ const ManagerDashboard: React.FC = () => {
     <div className="container">
       <h1>Manager Dashboard - Pending Check-in Requests</h1>
 
-      {/* New button added for navigation */}
-      <button 
-        onClick={() => navigate('/past-approvals')} 
+      {/* Existing View Past Approvals button */}
+      <button
+        onClick={() => navigate('/past-approvals')}
         className="navigateButton"
         style={{ marginBottom: 20, padding: '8px 16px', cursor: 'pointer' }}
       >
         View Past Approvals
       </button>
 
+      {/* New button to navigate to CheckinDetails page */}
+      <button
+        onClick={() => navigate('/checkin-details')}
+        className="navigateButton"
+        style={{ marginLeft: 10, marginBottom: 20, padding: '8px 16px', cursor: 'pointer' }}
+      >
+        View Check-in Details
+      </button>
+
       <button onClick={fetchRequests} className="refreshButton">
         See new requests
       </button>
+
       {requests.length === 0 ? (
         <p>No pending check-in requests.</p>
       ) : (
@@ -163,8 +173,8 @@ const ManagerDashboard: React.FC = () => {
               {requests.map((req) => (
                 <tr key={req.id}>
                   <td>
-                    {req.employee 
-                      ? `${req.employee.firstName} ${req.employee.lastName} (${req.employee.employeeId})` 
+                    {req.employee
+                      ? `${req.employee.firstName} ${req.employee.lastName} (${req.employee.employeeId})`
                       : "Unknown Employee"}
                   </td>
                   <td>{req.officeName || "N/A"}</td>
@@ -181,12 +191,10 @@ const ManagerDashboard: React.FC = () => {
                     )}
                   </td>
                   <td>
-                    Lat: {req.lat !== undefined && req.lat !== null ? req.lat.toFixed(4) : "?"}, 
+                    Lat: {req.lat !== undefined && req.lat !== null ? req.lat.toFixed(4) : "?"},{" "}
                     Lng: {req.lng !== undefined && req.lng !== null ? req.lng.toFixed(4) : "?"}
                   </td>
-                  <td>
-                    {req.timestamp ? new Date(req.timestamp).toLocaleString() : "No time"}
-                  </td>
+                  <td>{req.timestamp ? new Date(req.timestamp).toLocaleString() : "No time"}</td>
                   <td>
                     <input
                       type="text"
