@@ -52,13 +52,24 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/checkout - fetch all checkouts with checkin timestamp and employee id
+// GET /api/checkout - fetch checkouts with optional date filtering
 // Access restricted to users with role 'manager'
 router.get('/', auth(['manager']), async (req, res) => {
   try {
-    const checkouts = await Checkout.find()
-      .populate({ path: 'employee', select: 'employeeId' })       // get employeeId from employee
-      .populate({ path: 'checkin', select: ['timestamp' , 'photoUrl'] });
+    const { from, to } = req.query;
+    const filter = {};
+
+    // If from and to dates provided, filter by timestamp range
+    if (from && to) {
+      filter.timestamp = {
+        $gte: new Date(from),
+        $lt: new Date(to),
+      };
+    }
+
+    const checkouts = await Checkout.find(filter)
+      .populate({ path: 'employee', select: 'employeeId' })       // populate employeeId only
+      .populate({ path: 'checkin', select: ['timestamp', 'photoUrl'] }); // populate checkin timestamp and photoUrl
 
     // Convert timestamps to IST
     const checkoutsIST = checkouts.map(co => ({

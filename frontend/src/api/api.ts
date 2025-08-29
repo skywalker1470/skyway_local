@@ -57,16 +57,27 @@ export const reviewCheckin = async (
 
 // Employee Checkout
 export const checkout = async (employeeId: string, checkinId: string, token: string) => {
-  const response = await axios.post(`${API_URL}/checkout`, { employeeId, checkinId}, {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const response = await axios.post(
+    `${API_URL}/checkout`,
+    { employeeId, checkinId },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
   return response.data;
 };
 
-// Manager - fetch all checkouts (for PastApprovals page)
-export const fetchCheckouts = async (token: string) => {
-  const response = await axios.get(`${API_URL}/checkout`, {
-    headers: { Authorization: `Bearer ${token}` }
+// Manager - fetch all checkouts (for PastApprovals page) with optional date range filtering
+export const fetchCheckouts = async (
+  token: string,
+  fromISO?: string,
+  toISO?: string
+) => {
+  const queryParams: string[] = [];
+  if (fromISO && toISO) {
+    queryParams.push(`from=${encodeURIComponent(fromISO)}`, `to=${encodeURIComponent(toISO)}`);
+  }
+  const queryString = queryParams.length > 0 ? `?${queryParams.join('&')}` : '';
+  const response = await axios.get(`${API_URL}/checkout${queryString}`, {
+    headers: { Authorization: `Bearer ${token}` },
   });
   return response.data;
 };
